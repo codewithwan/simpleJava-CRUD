@@ -85,4 +85,22 @@ public class DataBaseManager extends Data {
             return efek > 0;
         }
     }
+
+    public static boolean DelAll() throws SQLException {
+        Connection db = KoneksiDB.getKoneksi();
+        String sql = "DELETE FROM cobaajadulu";
+        try (PreparedStatement q = db.prepareStatement(sql)) {
+            int efek = q.executeUpdate();
+            return efek > 0;
+        }
+    }
+
+    public static boolean DelRandom() throws SQLException {
+        Connection db = KoneksiDB.getKoneksi();
+        String sql = "DELETE FROM cobaajadulu WHERE id IN (SELECT id FROM cobaajadulu ORDER BY RAND() LIMIT 1)";
+        try (PreparedStatement q = db.prepareStatement(sql)) {
+            int efek = q.executeUpdate();
+            return efek > 0;
+        }
+    }
 }

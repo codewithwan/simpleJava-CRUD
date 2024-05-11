@@ -37,12 +37,12 @@ public class DataBaseTester {
     };
 
     public static void main(String[] args) {
-        int numData = 700;
+        int numData = 40;
 
         try {
             for (int i = 0; i < numData; i++) {
                 String nama = getRandomName();
-                String telp = getRandomThreeDigitNumber();
+                String telp = "08" + getRandomTenDigitNumber();
                 String kota = getRandomCity();
                 DataBaseManager.Add(new DataBaseManager(nama, kota, telp));
                 System.out.println("Data berhasil ditambahkan: " + nama + ", " + telp + ", " + kota);
@@ -58,9 +58,9 @@ public class DataBaseTester {
         return NAMES[index];
     }
 
-    private static String getRandomThreeDigitNumber() {
+    private static String getRandomTenDigitNumber() {
         Random random = new Random();
-        int number = random.nextInt(900) + 100; 
+        long number = (long) (random.nextDouble() * 9_000_000_000L) + 1_000_000_000L;
         return String.valueOf(number);
     }
 

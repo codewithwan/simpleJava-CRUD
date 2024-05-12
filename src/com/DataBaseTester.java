@@ -37,7 +37,7 @@ public class DataBaseTester {
     };
 
     public static void main(String[] args) {
-        int numData = 40;
+        int numData = 200;
 
         try {
             for (int i = 0; i < numData; i++) {

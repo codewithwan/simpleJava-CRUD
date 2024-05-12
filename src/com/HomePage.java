@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Comparator;
 import javax.swing.table.TableRowSorter;
+import com.formdev.flatlaf.FlatLightLaf;
 
 public final class HomePage extends javax.swing.JFrame {
 
@@ -16,13 +17,18 @@ public final class HomePage extends javax.swing.JFrame {
     private JMenuItem editMenuItem;
     private JMenuItem deleteMenuItem;
     private String filterCriteria = "Terbaru";
-
-    private DefaultTableModel model;
     private int currentPage = 1;
     private int totalRows;
     private int totalPages;
 
     public HomePage() {
+        try {
+            // Set tema FlatLaf "Cupertino Dark"
+            UIManager.setLookAndFeel(new FlatLightLaf());
+        } catch (UnsupportedLookAndFeelException ex) {
+            System.err.println("Tidak dapat menerapkan tema FlatLaf: " + ex.getMessage());
+        }
+
         initComponents();
         loadDataToTable();
         createPopupMenu();
@@ -30,7 +36,7 @@ public final class HomePage extends javax.swing.JFrame {
     }
 
     public void loadDataToTable() {
-        model = (DefaultTableModel) Tabel.getModel();
+        DefaultTableModel model = (DefaultTableModel) Tabel.getModel();
         model.setRowCount(0);
         List<DataBaseManager> data = DataBaseManager.loadDataToTable();
 
@@ -49,7 +55,7 @@ public final class HomePage extends javax.swing.JFrame {
         // Menghitung jumlah baris yang dapat ditampilkan pada satu halaman berdasarkan tinggi tampilan
         int rowHeight = Tabel.getRowHeight();
         int visibleRows = (Tabel.getHeight() - Tabel.getTableHeader().getHeight()) / rowHeight; // Mengurangi tinggi header
-        int pageSize = Math.max(24, visibleRows); // Setidaknya satu baris per halaman
+        int pageSize = Math.max(20, visibleRows); 
 
         totalPages = (int) Math.ceil((double) totalRows / pageSize);
 
@@ -105,7 +111,6 @@ public final class HomePage extends javax.swing.JFrame {
         dialog.pack();
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
-
         loadDataToTable();
     }
 
@@ -119,6 +124,7 @@ public final class HomePage extends javax.swing.JFrame {
                 boolean deleted = DataBaseManager.Del(id);
                 if (deleted) {
                     model.removeRow(modelRow);
+                    loadDataToTable();
                     JOptionPane.showMessageDialog(this, "Item berhasil dihapus.");
                 } else {
                     JOptionPane.showMessageDialog(this, "Gagal menghapus item.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -158,6 +164,7 @@ public final class HomePage extends javax.swing.JFrame {
             }
         } else {
             sorter.setRowFilter(RowFilter.regexFilter("(?i)" + query));
+//            loadDataToTable();
         }
     }
 
@@ -232,6 +239,7 @@ public final class HomePage extends javax.swing.JFrame {
             }
         });
         Tabel.setFocusable(false);
+        Tabel.setGridColor(new java.awt.Color(51, 51, 51));
         Tabel.getTableHeader().setReorderingAllowed(false);
         Tabel.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -352,7 +360,7 @@ public final class HomePage extends javax.swing.JFrame {
                 .addComponent(Update, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(Delete, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 156, Short.MAX_VALUE)
                 .addComponent(jButton1)
                 .addContainerGap())
         );
@@ -389,7 +397,7 @@ public final class HomePage extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(28, 28, 28)
                         .addComponent(Title, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 83, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 371, Short.MAX_VALUE)
                         .addComponent(Search, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(Filter, javax.swing.GroupLayout.PREFERRED_SIZE, 84, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -418,7 +426,7 @@ public final class HomePage extends javax.swing.JFrame {
                     .addComponent(Search, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(Filter, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 412, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 430, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(next)
@@ -496,9 +504,6 @@ public final class HomePage extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

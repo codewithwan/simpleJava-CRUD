@@ -38,7 +38,7 @@ public final class HomePage extends javax.swing.JFrame {
         loadDataToTable();
         createPopupMenu();
         centerTableCells();
-        setResizable(true);
+        setResizable(false);
     }
 
     public void loadDataToTable() {

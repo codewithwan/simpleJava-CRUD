@@ -26,7 +26,7 @@ public final class HomePage extends javax.swing.JFrame {
 
     public HomePage() {
         try {
-            if(isDarkMode) {
+            if (isDarkMode) {
                 UIManager.setLookAndFeel(new FlatDarkLaf());
             } else {
                 UIManager.setLookAndFeel(new FlatLightLaf());
@@ -57,10 +57,8 @@ public final class HomePage extends javax.swing.JFrame {
             }
         }
         totalRows = data.size();
-//        int rowHeight = Tabel.getRowHeight();
-        int visibleRows = (Tabel.getHeight() - 20) / 20; 
-        int pageSize = Math.max(20, visibleRows); 
-//        System.out.println(visibleRows);
+        int visibleRows = (Tabel.getHeight() - 20) / 20;
+        int pageSize = Math.max(20, visibleRows);
 
         totalPages = (int) Math.ceil((double) totalRows / pageSize);
 
@@ -69,7 +67,7 @@ public final class HomePage extends javax.swing.JFrame {
 
         for (int i = start; i < end; i++) {
             DataBaseManager record = data.get(i);
-            Object[] row = {String.valueOf(record.getId()), record.getNama(), record.getTelp(), record.getKota()};
+            Object[] row = {record.getId(), record.getNama(), record.getTelp(), record.getKota(), record.getPoin(), record.getMember(), record.getTotal()};
             model.addRow(row);
         }
 
@@ -80,6 +78,11 @@ public final class HomePage extends javax.swing.JFrame {
         popupMenu = new JPopupMenu();
         editMenuItem = new JMenuItem("Edit");
         deleteMenuItem = new JMenuItem("Delete");
+        JMenuItem detailMenuItem = new JMenuItem("Detail");
+
+        detailMenuItem.addActionListener((evt) -> {
+            showDetailDialog();
+        });
 
         editMenuItem.addActionListener(e -> {
             int selectedRow = Tabel.getSelectedRow();
@@ -97,46 +100,72 @@ public final class HomePage extends javax.swing.JFrame {
             }
         });
 
+        popupMenu.add(detailMenuItem);
+        Tabel.setComponentPopupMenu(popupMenu);
         popupMenu.add(editMenuItem);
         popupMenu.add(deleteMenuItem);
     }
 
+    private void showDetailDialog() {
+        int selectedRow = Tabel.getSelectedRow();
+        if (selectedRow != -1) {
+            String id = (String) Tabel.getValueAt(selectedRow, 0);
+            DataBaseManager data = DataBaseManager.getDataById(id);
+            if (data != null) {
+                String belanja = DataBaseManager.getBelanjaById(id);
+                String detailMessage = String.format("Nama: %s\nKota: %s\nNo Hp: %s\nMember: %s\nTotal Pembelian: %s\nPoin: %s\nTotal Belanja: Rp. %s0",
+                        data.getNama(), data.getKota(), data.getTelp(), data.getMember(), data.getTotal(), data.getPoin(), belanja != null ? belanja : "Data Belanja Tidak Tersedia");
+                JOptionPane.showMessageDialog(this, detailMessage, "Detail Akun", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Data dengan ID " + id + " tidak ditemukan.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Pilih baris terlebih dahulu.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
     private void editData(int selectedRow) {
-        String idString = (String) Tabel.getValueAt(selectedRow, 0);
-        int id = Integer.parseInt(idString);
-        String nama = (String) Tabel.getValueAt(selectedRow, 1);
-        String telp = (String) Tabel.getValueAt(selectedRow, 2);
-        String kota = (String) Tabel.getValueAt(selectedRow, 3);
-
-        EditData editData = new EditData(id, nama, telp, kota, this);
-
-        JDialog dialog = new JDialog(this, "Perbarui Data", true);
-        dialog.getContentPane().add(editData);
-
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-        dialog.setVisible(true);
-        loadDataToTable();
+        String id = (String) Tabel.getValueAt(selectedRow, 0);
+        DataBaseManager data = DataBaseManager.getDataById(id);
+        if (data != null) {
+            EditData editData = new EditData(data, this);
+            JDialog dialog = new JDialog(this, "Perbarui Data", true);
+            dialog.getContentPane().add(editData);
+            dialog.pack();
+            dialog.setLocationRelativeTo(this);
+            dialog.setVisible(true);
+            loadDataToTable();
+        } else {
+            JOptionPane.showMessageDialog(this, "Data dengan ID " + id + " tidak ditemukan.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void deleteData(int selectedRow) {
-        int option = JOptionPane.showConfirmDialog(HomePage.this, "Apakah Anda yakin ingin menghapus item ini?", "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION);
-        if (option == JOptionPane.YES_OPTION) {
-            DefaultTableModel model = (DefaultTableModel) Tabel.getModel();
-            int modelRow = Tabel.convertRowIndexToModel(selectedRow);
-            String id = model.getValueAt(modelRow, 0).toString();
-            try {
-                boolean deleted = DataBaseManager.Del(id);
-                if (deleted) {
-                    model.removeRow(modelRow);
-                    loadDataToTable();
-                    JOptionPane.showMessageDialog(this, "Item berhasil dihapus.");
-                } else {
-                    JOptionPane.showMessageDialog(this, "Gagal menghapus item.", "Error", JOptionPane.ERROR_MESSAGE);
+        String id = (String) Tabel.getValueAt(selectedRow, 0);
+        DataBaseManager data = DataBaseManager.getDataById(id);
+        if (data != null) {
+            String belanja = DataBaseManager.getBelanjaById(id);
+            String detailMessage = String.format(
+                    "Anda yakin ingin menghapus akun ini?\n"
+                    + "Detail Akun:\n" + "Nama: %s\n" + "Kota: %s\n" + "No Hp: %s\n" + "Member: %s\n" + "Total Pembelian: %s\n" + "Poin: %s\n" + "Total Belanja: Rp. %s0",
+                    data.getNama(), data.getKota(), data.getTelp(), data.getMember(), data.getTotal(), data.getPoin(), belanja != null ? belanja : "Data Belanja Tidak Tersedia");
+
+            int option = JOptionPane.showConfirmDialog(this, detailMessage, "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION);
+            if (option == JOptionPane.YES_OPTION) {
+                try {
+                    boolean deleted = DataBaseManager.Del(id);
+                    if (deleted) {
+                        JOptionPane.showMessageDialog(this, "Akun berhasil dihapus!");
+                        loadDataToTable();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Gagal menghapus akun.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Terjadi kesalahan saat menghapus item: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        } else {
+            JOptionPane.showMessageDialog(this, "Data dengan ID " + id + " tidak ditemukan.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -149,7 +178,6 @@ public final class HomePage extends javax.swing.JFrame {
             sorter.setRowFilter(null);
             return;
         }
-
         String[] parts = query.split(":");
         if (parts.length == 2) {
             String column = parts[0].trim().toLowerCase();
@@ -184,8 +212,6 @@ public final class HomePage extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jMenu1 = new javax.swing.JMenu();
-        jPopupMenu1 = new javax.swing.JPopupMenu();
         Title = new javax.swing.JLabel();
         Search = new javax.swing.JTextField();
         jScrollPane2 = new javax.swing.JScrollPane();
@@ -197,8 +223,7 @@ public final class HomePage extends javax.swing.JFrame {
         Add = new javax.swing.JButton();
         Update = new javax.swing.JButton();
         Delete = new javax.swing.JButton();
-
-        jMenu1.setText("jMenu1");
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(java.awt.SystemColor.controlLtHighlight);
@@ -216,20 +241,20 @@ public final class HomePage extends javax.swing.JFrame {
 
         Tabel.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null},
+                {null, null, null, null, null, null, null}
             },
             new String [] {
-                "ID", "Nama", "No. Hp", "Kota"
+                "ID", "Nama", "No. Hp", "Kota", "Point", "Member", "Total"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.Integer.class, java.lang.String.class, java.lang.Integer.class, java.lang.String.class
+                java.lang.Integer.class, java.lang.String.class, java.lang.Integer.class, java.lang.String.class, java.lang.Object.class, java.lang.Object.class, java.lang.Object.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false
+                false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -252,8 +277,10 @@ public final class HomePage extends javax.swing.JFrame {
         });
         jScrollPane2.setViewportView(Tabel);
         if (Tabel.getColumnModel().getColumnCount() > 0) {
-            Tabel.getColumnModel().getColumn(0).setPreferredWidth(15);
-            Tabel.getColumnModel().getColumn(3).setPreferredWidth(20);
+            Tabel.getColumnModel().getColumn(0).setPreferredWidth(5);
+            Tabel.getColumnModel().getColumn(3).setPreferredWidth(25);
+            Tabel.getColumnModel().getColumn(5).setPreferredWidth(15);
+            Tabel.getColumnModel().getColumn(6).setPreferredWidth(15);
         }
 
         Filter.setBackground(new java.awt.Color(255, 255, 255));
@@ -289,7 +316,8 @@ public final class HomePage extends javax.swing.JFrame {
         jTextField1.setFocusable(false);
 
         Add.setBackground(new java.awt.Color(102, 255, 102));
-        Add.setForeground(new java.awt.Color(51, 51, 51));
+        Add.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        Add.setForeground(new java.awt.Color(0, 0, 0));
         Add.setText("Tambah Data");
         Add.setFocusable(false);
         Add.addActionListener(new java.awt.event.ActionListener() {
@@ -299,7 +327,8 @@ public final class HomePage extends javax.swing.JFrame {
         });
 
         Update.setBackground(new java.awt.Color(102, 102, 255));
-        Update.setForeground(new java.awt.Color(51, 51, 51));
+        Update.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        Update.setForeground(new java.awt.Color(0, 0, 0));
         Update.setText("Perbarui Data");
         Update.setFocusable(false);
         Update.addActionListener(new java.awt.event.ActionListener() {
@@ -309,7 +338,8 @@ public final class HomePage extends javax.swing.JFrame {
         });
 
         Delete.setBackground(new java.awt.Color(255, 102, 102));
-        Delete.setForeground(new java.awt.Color(51, 51, 51));
+        Delete.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        Delete.setForeground(new java.awt.Color(0, 0, 0));
         Delete.setText("Hapus Data");
         Delete.setFocusable(false);
         Delete.addActionListener(new java.awt.event.ActionListener() {
@@ -318,6 +348,9 @@ public final class HomePage extends javax.swing.JFrame {
             }
         });
 
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel1.setText("Cari : ");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -325,25 +358,29 @@ public final class HomePage extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addGap(28, 28, 28)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 973, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(back)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(next))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(Title, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(Search, javax.swing.GroupLayout.DEFAULT_SIZE, 283, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(Title, javax.swing.GroupLayout.PREFERRED_SIZE, 283, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(Add, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(Update, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(Delete, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel1)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(Filter, javax.swing.GroupLayout.PREFERRED_SIZE, 84, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 112, Short.MAX_VALUE)
-                        .addComponent(Add, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(Search, javax.swing.GroupLayout.PREFERRED_SIZE, 243, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(Update, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(Delete, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(jScrollPane2))
+                        .addComponent(Filter, javax.swing.GroupLayout.PREFERRED_SIZE, 84, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(28, 28, 28))
         );
 
@@ -357,14 +394,17 @@ public final class HomePage extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(Title)
                 .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(Search, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(Filter, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(Add, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(Update, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(Delete, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(Search, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(Filter, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(Add, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(Update, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(Delete, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane2)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 430, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(next)
@@ -460,8 +500,7 @@ public final class HomePage extends javax.swing.JFrame {
     private javax.swing.JLabel Title;
     private javax.swing.JButton Update;
     private javax.swing.JButton back;
-    private javax.swing.JMenu jMenu1;
-    private javax.swing.JPopupMenu jPopupMenu1;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JButton next;

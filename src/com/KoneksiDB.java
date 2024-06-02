@@ -10,7 +10,7 @@ public class KoneksiDB {
     public static Connection getKoneksi() {
         try {
             DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver());
-            String url = "jdbc:mysql://localhost:3306/coba"; //url database
+            String url = "jdbc:mysql://localhost:3306/pbodb"; //url database
             String user = "root"; //user database
             String pass = ""; //password database
             koneksi = DriverManager.getConnection(url, user, pass);
